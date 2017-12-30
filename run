@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Add npm binaries to path
+export PATH=./node_modules/.bin:$PATH
+
+function clean(){
+ rm -rf dist
+}
+
+function dev() {
+  webpack-dev-server --config=webpack.dev.config.js
+}
+
+function dist(){
+  clean
+  webpack -p --config=webpack.base.config.js
+}
+
+# Run a function name in the context of this script
+eval "$@"
