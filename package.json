@@ -2,7 +2,9 @@
   "name": "prosemirror-react-view",
   "version": "0.0.1",
   "main": "dist/lib.js",
-  "file": ["dist/lib.js"],
+  "file": [
+    "dist/lib.js"
+  ],
   "license": "MIT",
   "repository": "torifat/prosemirror-react-view",
   "scripts": {
@@ -19,12 +21,17 @@
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-preset-env": "^1.6.1",
     "babel-preset-react": "^6.24.1",
+    "css-loader": "^0.28.9",
+    "less": "^3.0.0",
+    "less-loader": "^4.0.5",
     "prosemirror-commands": "^1.0.3",
     "prosemirror-keymap": "^1.0.0",
     "prosemirror-model": "^1.0.1",
     "prosemirror-state": "^1.0.2",
     "react": "^16.2.0",
+    "react-clock": "^2.2.0",
     "react-dom": "^16.2.0",
+    "style-loader": "^0.20.1",
     "webpack": "^3.10.0",
     "webpack-dev-server": "^2.9.7"
   }

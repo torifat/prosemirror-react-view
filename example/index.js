@@ -5,6 +5,7 @@ import { baseKeymap } from 'prosemirror-commands';
 
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
+import Clock from 'react-clock';
 
 import { EditorView } from '../src';
 import docJs from './doc';
@@ -29,7 +30,39 @@ const nodes = {
     group: 'inline',
     toReact: class Text extends Component {
       render() {
-        return this.porps.children;
+        return this.props.children;
+      }
+    },
+  },
+
+  clock: {
+    group: 'block',
+    attrs: {
+      initialDate: { default: new Date() },
+    },
+    toReact: class MyApp extends Component {
+      constructor(props) {
+        super(props);
+        this.state = {
+          date: this.props.initialDate,
+        };
+      }
+
+      componentDidMount() {
+        const tick = 1000; //ms
+        setInterval(() => {
+          const { date } = this.state;
+          const newDate = new Date(date.getTime() + tick);
+          this.setState({ date: newDate });
+        }, tick);
+      }
+
+      render() {
+        return (
+          <div contentEditable={false} style={{ margin: '20px 0' }}>
+            <Clock value={this.state.date} />
+          </div>
+        );
       }
     },
   },
