@@ -2,93 +2,13 @@ import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import { TextSelection, Selection } from 'prosemirror-state';
 
+import renderer from './renderer';
+import { findStartPos, getPmViewDesc } from './helpers';
 import Keys from './keys';
-
-let selectionParent = null;
-
-// nodeToReactElement :: Node<Attributes> -> ReactElement<Props>
-const nodeToReactElement = (
-  node,
-  depth,
-  selection,
-  parentPmViewDesc = { children: [] }
-) =>
-  node.content.content.map((child, idx) => {
-    if (child.isBlock) {
-      const updateRef = selection.$head.parent === child;
-      const Block = child.type.spec.toReact;
-      const key = `${child.type.name}-${depth}-${idx}`;
-      const { attrs } = child;
-      const pmViewDesc = {
-        node: child,
-        parent: parentPmViewDesc,
-        children: node.content.content,
-      };
-      const children =
-        child.content.size === 0 ? (
-          <br />
-        ) : (
-          nodeToReactElement(child, depth + 1, selection, pmViewDesc)
-        );
-
-      return (
-        <Block
-          ref={ref => {
-            // https://reactjs.org/docs/refs-and-the-dom.html#exposing-dom-refs-to-parent-components
-            const dom = ReactDOM.findDOMNode(ref);
-            if (dom) {
-              pmViewDesc.dom = dom;
-              // TODO: Clean up during componentWillUnmount otherwise will create memory leaks
-              dom.pmViewDesc = pmViewDesc;
-            }
-            // selectionParent = updateRef ? ref : selectionParent;
-          }}
-          key={key}
-          {...attrs}
-        >
-          {children}
-        </Block>
-      );
-    } else if (child.type.name === 'text') {
-      return child.marks.reduce((text, mark, idx) => {
-        const Mark = mark.type.spec.toReact;
-        const key = `${mark.type.name}-${depth}-${idx}`;
-        const { attrs } = mark;
-        const pmViewDesc = {
-          node: child,
-          parent: {
-            node,
-            children: node.content.content,
-            parent: parentPmViewDesc,
-          },
-          children: [],
-        };
-
-        return (
-          <Mark
-            ref={ref => {
-              // https://reactjs.org/docs/refs-and-the-dom.html#exposing-dom-refs-to-parent-components
-              const dom = ReactDOM.findDOMNode(ref);
-              if (dom) {
-                pmViewDesc.dom = dom;
-                // TODO: Clean up during componentWillUnmount otherwise will create memory leaks
-                dom.pmViewDesc = pmViewDesc;
-              }
-            }}
-            key={key}
-            {...attrs}
-          >
-            {text}
-          </Mark>
-        );
-      }, child.text);
-    } else {
-      throw new Error(`${child.type.name} is not defined!`);
-    }
-  });
 
 export class EditorView extends Component {
   listeners = { handleKeyDown: [] };
+  rootPmViewDesc = {};
 
   state = {
     editorState: this.props.state,
@@ -106,6 +26,11 @@ export class EditorView extends Component {
 
   render() {
     const { editorState } = this.state;
+    this.rootPmViewDesc = {
+      node: editorState.doc,
+      children: [],
+    };
+
     return (
       <div
         ref={ref => (this.editorContainer = ref)}
@@ -116,7 +41,7 @@ export class EditorView extends Component {
         onSelect={this.onSelect}
         suppressContentEditableWarning
       >
-        {nodeToReactElement(editorState.doc, 0, editorState.selection)}
+        {renderer(editorState.doc, 0, this.rootPmViewDesc)}
       </div>
     );
   }
@@ -134,7 +59,8 @@ export class EditorView extends Component {
     const { editorState } = this.state;
     const newState = editorState.apply(tr);
     this.setState({ editorState: newState }, () => {
-      if (selectionParent && !ignoreSelection) {
+      if (!ignoreSelection) {
+        console.log(this.rootPmViewDesc);
         // const selection = window.getSelection();
         // selection.removeAllRanges();
         // const range = document.createRange();
@@ -207,53 +133,12 @@ export class EditorView extends Component {
   onSelect = event => {
     const { editorState } = this.state;
     const domSel = window.getSelection();
-    // TODO: Find why we need +1
+    // +1 for doc(<--| start border |)
     const head =
       findStartPos(getPmViewDesc(domSel.anchorNode)) + domSel.anchorOffset + 1;
-    console.log(head);
     const $head = editorState.doc.resolve(head);
     const sel = Selection.findFrom($head, 0);
-    // const selection = TextSelection.create(
-    //   editorState.doc,
-    //   domSel.anchorOffset
-    // );
-    // console.log(sel);
     const tr = editorState.tr.setSelection(sel);
     this.dispatch(tr, true);
   };
 }
-
-function getPmViewDesc(dom) {
-  let pointer = dom;
-  while (!pointer.pmViewDesc) {
-    pointer = pointer.parentElement;
-    if (!pointer) break;
-  }
-  return (pointer && pointer.pmViewDesc) || {};
-}
-
-function findStartPos(pmViewDesc) {
-  return pmViewDesc.parent ? findPosBeforeChild(pmViewDesc) : 0;
-}
-
-function findPosBeforeChild(pmViewDesc) {
-  const { node, parent, dom } = pmViewDesc;
-  const { children } = parent;
-
-  let pos = findStartPos(parent);
-  for (let i = 0; i < children.length; i++) {
-    const cur = children[i];
-    if (cur === node) return pos;
-    pos += cur.nodeSize;
-  }
-  return pos;
-}
-
-// Helpers
-function before(beforeFn) {
-  return baseFn => (...args) => {
-    baseFn(...args);
-  };
-}
-
-const lol = before(() => console.log('lol'));
