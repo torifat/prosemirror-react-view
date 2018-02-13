@@ -7,31 +7,39 @@ import Keys from './keys';
 let selectionParent = null;
 
 // nodeToReactElement :: Node<Attributes> -> ReactElement<Props>
-const nodeToReactElement = (node, depth, selection) =>
+const nodeToReactElement = (
+  node,
+  depth,
+  selection,
+  parentPmViewDesc = { children: [] }
+) =>
   node.content.content.map((child, idx) => {
     if (child.isBlock) {
       const updateRef = selection.$head.parent === child;
       const Block = child.type.spec.toReact;
       const key = `${child.type.name}-${depth}-${idx}`;
       const { attrs } = child;
+      const pmViewDesc = {
+        node: child,
+        parent: parentPmViewDesc,
+        children: node.content.content,
+      };
       const children =
         child.content.size === 0 ? (
           <br />
         ) : (
-          nodeToReactElement(child, depth + 1)
+          nodeToReactElement(child, depth + 1, selection, pmViewDesc)
         );
+
       return (
         <Block
           ref={ref => {
             // https://reactjs.org/docs/refs-and-the-dom.html#exposing-dom-refs-to-parent-components
             const dom = ReactDOM.findDOMNode(ref);
             if (dom) {
-              dom.pmViewDesc = {
-                parent: node,
-                node: child,
-                // TODO: Clean up during componentWillUnmount otherwise will create memory leaks
-                dom,
-              };
+              pmViewDesc.dom = dom;
+              // TODO: Clean up during componentWillUnmount otherwise will create memory leaks
+              dom.pmViewDesc = pmViewDesc;
             }
             // selectionParent = updateRef ? ref : selectionParent;
           }}
@@ -46,18 +54,25 @@ const nodeToReactElement = (node, depth, selection) =>
         const Mark = mark.type.spec.toReact;
         const key = `${mark.type.name}-${depth}-${idx}`;
         const { attrs } = mark;
+        const pmViewDesc = {
+          node: child,
+          parent: {
+            node,
+            children: node.content.content,
+            parent: parentPmViewDesc,
+          },
+          children: [],
+        };
+
         return (
           <Mark
             ref={ref => {
               // https://reactjs.org/docs/refs-and-the-dom.html#exposing-dom-refs-to-parent-components
               const dom = ReactDOM.findDOMNode(ref);
               if (dom) {
-                dom.pmViewDesc = {
-                  parent: node,
-                  node: child,
-                  // TODO: Clean up during componentWillUnmount otherwise will create memory leaks
-                  dom,
-                };
+                pmViewDesc.dom = dom;
+                // TODO: Clean up during componentWillUnmount otherwise will create memory leaks
+                dom.pmViewDesc = pmViewDesc;
               }
             }}
             key={key}
@@ -223,22 +238,22 @@ function findStartPos(pmViewDesc) {
 
 function findPosBeforeChild(pmViewDesc) {
   const { node, parent, dom } = pmViewDesc;
+  const { children } = parent;
 
-  // console.log(
-  //   'getPmViewDesc',
-  //   dom,
-  //   dom.parentElement,
-  //   getPmViewDesc(dom.parentElement)
-  // );
-
-  const children = parent.content.content;
-  for (
-    let i = 0, pos = findStartPos(getPmViewDesc(dom.parentElement));
-    i < children.length;
-    i++
-  ) {
+  let pos = findStartPos(parent);
+  for (let i = 0; i < children.length; i++) {
     const cur = children[i];
     if (cur === node) return pos;
     pos += cur.nodeSize;
   }
+  return pos;
 }
+
+// Helpers
+function before(beforeFn) {
+  return baseFn => (...args) => {
+    baseFn(...args);
+  };
+}
+
+const lol = before(() => console.log('lol'));

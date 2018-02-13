@@ -36,10 +36,22 @@ export default {
       ],
     },
     {
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'Custom Clock', marks: [{ type: 'strong' }] },
+      ],
+    },
+    {
       type: 'clock',
       attrs: {
         initialDate: new Date('December 17, 1995 03:24:00'),
       },
+    },
+    {
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'Current Clock', marks: [{ type: 'strong' }] },
+      ],
     },
     {
       type: 'clock',
