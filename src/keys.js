@@ -6,6 +6,8 @@ export default {
   DOWN: 38,
   RIGHT: 39,
   UP: 40,
+  ZERO: 48,
+  NINE: 57,
   A: 65,
   Z: 90,
 };

@@ -85,7 +85,10 @@ export class EditorView extends Component {
 
     switch (keyCode) {
       case Keys.RETURN:
+        event.preventDefault();
       case Keys.BACKSPACE:
+      case Keys.LEFT:
+      case Keys.RIGHT:
         this.listeners.handleKeyDown.forEach(listener => {
           listener(
             {
@@ -97,17 +100,7 @@ export class EditorView extends Component {
           );
         });
         break;
-      case Keys.LEFT:
-      case Keys.RIGHT:
-        const { selection } = editorState;
-        if (selection instanceof TextSelection) {
-          const dir = keyCode === Keys.LEFT ? -1 : 1;
-          const sel = Selection.findFrom(selection.$head + dir, 0);
-          const tr = editorState.tr.setSelection(sel);
-          this.dispatch(tr);
-        }
-        event.preventDefault();
-        break;
+
       default:
         if (
           (event.which >= Keys.A && event.which <= Keys.Z) ||
