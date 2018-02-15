@@ -3,7 +3,8 @@ import ReactDOM from 'react-dom';
 import { TextSelection, Selection } from 'prosemirror-state';
 
 import renderer from './renderer';
-import { findStartPos, getPmViewDesc } from './helpers';
+import { findStartPos, getPmViewDesc } from './helpers/pm-view-desc';
+import { setSelection } from './helpers/selection';
 import Keys from './keys';
 
 export class EditorView extends Component {
@@ -33,7 +34,7 @@ export class EditorView extends Component {
 
     return (
       <div
-        ref={ref => (this.editorContainer = ref)}
+        ref={ref => (this.rootPmViewDesc.dom = ref)}
         contentEditable={true}
         onKeyDown={this.onKeyDown}
         onKeyPress={this.onKeyPress}
@@ -51,7 +52,7 @@ export class EditorView extends Component {
   }
 
   shouldComponentUpdate(nextProps, nextState) {
-    console.log(nextState.editorState.selection);
+    // console.log(nextState.editorState.selection);
     return nextState.editorState.doc !== this.state.editorState.doc;
   }
 
@@ -60,29 +61,21 @@ export class EditorView extends Component {
     const newState = editorState.apply(tr);
     this.setState({ editorState: newState }, () => {
       if (!ignoreSelection) {
-        console.log(this.rootPmViewDesc);
-        // const selection = window.getSelection();
-        // selection.removeAllRanges();
-        // const range = document.createRange();
-        // range.setStart(
-        //   ReactDOM.findDOMNode(selectionParent).firstChild,
-        //   newState.selection.$head.parentOffset
-        // );
-        // selection.addRange(range);
-        // selectionParent = null;
+        const { anchor, head } = newState.selection;
+        setSelection(anchor, head, this.rootPmViewDesc);
       }
     });
   };
 
   onKeyDown = event => {
     const { editorState } = this.state;
-    console.groupCollapsed('%cKeyDown', 'color: green');
-    ['key', 'which', 'target', 'metaKey', 'ctrlKey', 'shiftKey'].forEach(
-      key => {
-        console.log(key, '→', event[key]);
-      }
-    );
-    console.groupEnd('KeyDown');
+    // console.groupCollapsed('%cKeyDown', 'color: green');
+    // ['key', 'which', 'target', 'metaKey', 'ctrlKey', 'shiftKey'].forEach(
+    //   key => {
+    //     console.log(key, '→', event[key]);
+    //   }
+    // );
+    // console.groupEnd('KeyDown');
 
     if (event.metaKey || event.ctrlKey) {
       return;
