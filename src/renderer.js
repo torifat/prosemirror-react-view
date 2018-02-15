@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, createElement } from 'react';
 import ReactDOM from 'react-dom';
 
 const assignDomToPmViewDesc = pmViewDesc => ref => {
@@ -11,11 +11,34 @@ const assignDomToPmViewDesc = pmViewDesc => ref => {
   }
 };
 
+const smartRender = WrappedComponent => {
+  class WrapperComponent extends Component {
+    shouldComponentUpdate(nextProps) {
+      return nextProps.children !== this.props.children;
+    }
+
+    render() {
+      return createElement(WrappedComponent, this.props);
+    }
+  }
+  WrapperComponent.displayName = `SmartRendered(${WrappedComponent.name})`;
+  return WrapperComponent;
+};
+
+const componentCache = {};
+const getComponent = child => {
+  const { name, spec } = child.type;
+  if (!componentCache[name]) {
+    componentCache[name] = smartRender(spec.toReact);
+  }
+  return componentCache[name];
+};
+
 // nodeToReactElement :: Node<Attributes> -> ReactElement<Props>
 const nodeToReactElement = (node, depth, parentPmViewDesc) =>
   node.content.content.map((child, idx) => {
     if (child.isBlock) {
-      const Block = child.type.spec.toReact;
+      const Block = getComponent(child);
       const key = `${child.type.name}-${depth}-${idx}`;
       const { attrs } = child;
       const pmViewDesc = {
@@ -39,7 +62,7 @@ const nodeToReactElement = (node, depth, parentPmViewDesc) =>
       );
     } else if (child.type.name === 'text') {
       if (child.marks.length === 0) {
-        const Text = child.type.spec.toReact;
+        const Text = getComponent(child);
         const key = `${child.type.name}-${depth}-${idx}`;
         const pmViewDesc = {
           node: child,
@@ -56,7 +79,7 @@ const nodeToReactElement = (node, depth, parentPmViewDesc) =>
       }
 
       return child.marks.reduce((text, mark, idx) => {
-        const Mark = mark.type.spec.toReact;
+        const Mark = getComponent(mark);
         const key = `${mark.type.name}-${depth}-${idx}`;
         const { attrs } = mark;
         const pmViewDesc = {

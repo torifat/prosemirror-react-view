@@ -69,13 +69,13 @@ export class EditorView extends Component {
 
   onKeyDown = event => {
     const { editorState } = this.state;
-    // console.groupCollapsed('%cKeyDown', 'color: green');
-    // ['key', 'which', 'target', 'metaKey', 'ctrlKey', 'shiftKey'].forEach(
-    //   key => {
-    //     console.log(key, '→', event[key]);
-    //   }
-    // );
-    // console.groupEnd('KeyDown');
+    console.groupCollapsed('%cKeyDown', 'color: green');
+    ['key', 'which', 'target', 'metaKey', 'ctrlKey', 'shiftKey'].forEach(
+      key => {
+        console.log(key, '→', event[key]);
+      }
+    );
+    console.groupEnd('KeyDown');
 
     if (event.metaKey || event.ctrlKey) {
       return;
@@ -85,27 +85,34 @@ export class EditorView extends Component {
 
     switch (keyCode) {
       case Keys.RETURN:
+      case Keys.BACKSPACE:
         this.listeners.handleKeyDown.forEach(listener => {
           listener(
             {
               state: editorState,
               dispatch: this.dispatch,
+              endOfTextblock: this.endOfTextblock,
             },
             event
           );
         });
         break;
       case Keys.LEFT:
+      case Keys.RIGHT:
         const { selection } = editorState;
         if (selection instanceof TextSelection) {
-          const sel = Selection.near(selection.$head, -1);
+          const dir = keyCode === Keys.LEFT ? -1 : 1;
+          const sel = Selection.findFrom(selection.$head + dir, 0);
           const tr = editorState.tr.setSelection(sel);
           this.dispatch(tr);
         }
         event.preventDefault();
         break;
       default:
-        if (event.which >= 65 && event.which <= 90) {
+        if (
+          (event.which >= Keys.A && event.which <= Keys.Z) ||
+          event.which === Keys.SPACE
+        ) {
           const tr = editorState.tr.insertText(event.key);
           this.dispatch(tr);
         }
@@ -131,7 +138,13 @@ export class EditorView extends Component {
       findStartPos(getPmViewDesc(domSel.anchorNode)) + domSel.anchorOffset + 1;
     const $head = editorState.doc.resolve(head);
     const sel = Selection.findFrom($head, 0);
-    const tr = editorState.tr.setSelection(sel);
-    this.dispatch(tr, true);
+    if (sel) {
+      const tr = editorState.tr.setSelection(sel);
+      this.dispatch(tr, true);
+    }
   };
+
+  endOfTextblock() {
+    console.log('TODO: endOfTextblock');
+  }
 }
