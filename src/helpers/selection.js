@@ -35,8 +35,9 @@ export const setSelection = (anchor, head, pmViewDesc) => {
 
   for (let i = 0, offset = 0; i < children.length; i++) {
     let child = children[i],
-      end = offset + child.node.nodeSize; //child.node.content.size;
-    if (from > offset && to < end) {
+      end = offset + child.node.nodeSize; // child.node.content.size;
+    // NOTE: Change `< end` to `<=`, to fix typing at the end
+    if (from > offset && to <= end) {
       return setSelection(
         anchor - offset - (child.node.isText ? 0 : 1), //child.border,
         head - offset - (child.node.isText ? 0 : 1), //child.border,
