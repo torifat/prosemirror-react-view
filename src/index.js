@@ -73,7 +73,6 @@ export class EditorView extends Component {
   };
 
   onKeyDown = event => {
-    const { editorState } = this.state;
     console.groupCollapsed('%cKeyDown', 'color: green');
     ['key', 'which', 'target', 'metaKey', 'ctrlKey', 'shiftKey'].forEach(
       key => {
@@ -86,6 +85,7 @@ export class EditorView extends Component {
       return;
     }
 
+    const { editorState } = this.state;
     const keyCode = event.which;
 
     switch (keyCode) {
@@ -107,37 +107,38 @@ export class EditorView extends Component {
         break;
 
       default:
-        if (
-          (event.which >= Keys.A && event.which <= Keys.Z) ||
-          (event.which >= Keys.ZERO && event.which <= Keys.NINE) ||
-          // :) <
-          (event.which === 186 || event.which === 48 || event.which === 188) ||
-          event.which === Keys.SPACE
-        ) {
-          const { from, to } = editorState.selection;
-          const handled = this.listeners.handleTextInput.some(listener =>
-            listener(
-              {
-                state: editorState,
-                dispatch: this.dispatch,
-              },
-              from,
-              to,
-              event.key
-            )
-          );
-
-          if (!handled) {
-            const tr = editorState.tr.insertText(event.key, from, to);
-            this.dispatch(tr);
-          }
-        }
-        event.preventDefault();
     }
   };
 
   onKeyPress = event => {
     // console.log('KeyPress', event.key);
+    if (!event.charCode || (event.ctrlKey && !event.altKey)) {
+      return;
+    }
+
+    const { editorState } = this.state;
+
+    const { $from, $to } = editorState.selection;
+    const text = String.fromCharCode(event.charCode);
+    const handled = this.listeners.handleTextInput.some(listener =>
+      listener(
+        {
+          state: editorState,
+          dispatch: this.dispatch,
+        },
+        $from.pos,
+        $to.pos,
+        text
+      )
+    );
+
+    if (!handled) {
+      const tr = editorState.tr
+        .insertText(text, $from.pos, $to.pos)
+        .scrollIntoView();
+      this.dispatch(tr);
+    }
+
     event.preventDefault();
   };
 

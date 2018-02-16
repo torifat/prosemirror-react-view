@@ -9,6 +9,7 @@ import { baseKeymap } from 'prosemirror-commands';
 import {
   inputRules,
   InputRule,
+  wrappingInputRule,
   textblockTypeInputRule,
 } from 'prosemirror-inputrules';
 
@@ -130,11 +131,12 @@ function headingRule(nodeType, maxLevel) {
 }
 
 const rules = [
-  new InputRule(/:\)$/, '😀'),
-  new InputRule(/:o$/, '😲'),
-  new InputRule(/8\)$/, '😎'),
+  new InputRule(/:\-?\)$/, '😀'),
+  new InputRule(/:\-?o$/, '😲'),
+  new InputRule(/8\-?\)$/, '😎'),
   new InputRule(/<3$/, '❤️'),
   new InputRule(/atlassian$/, 'Atlassian'),
+  new InputRule(/jira|JIRA/, 'Jira'),
   headingRule(schema.nodes.heading, 6),
 ];
 
