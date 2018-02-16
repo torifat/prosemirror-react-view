@@ -10,6 +10,11 @@ import {
 } from './helpers/selection';
 import Keys from './keys';
 
+const style = {
+  whiteSpace: 'pre-wrap',
+  wordWrap: 'break-word',
+};
+
 export class EditorView extends Component {
   listeners = { handleKeyDown: [], handleTextInput: [] };
   rootPmViewDesc = {};
@@ -45,6 +50,7 @@ export class EditorView extends Component {
         onKeyPress={this.onKeyPress}
         onKeyUp={this.onKeyUp}
         onSelect={this.onSelect}
+        style={style}
         suppressContentEditableWarning
       >
         {renderer(editorState.doc, 0, this.rootPmViewDesc)}
