@@ -1,12 +1,16 @@
+import React, { Component } from 'react';
+import ReactDOM from 'react-dom';
+import Clock from 'react-clock';
+
 import { EditorState } from 'prosemirror-state';
 import { Schema } from 'prosemirror-model';
 import { keymap } from 'prosemirror-keymap';
 import { baseKeymap } from 'prosemirror-commands';
-import { inputRules, InputRule } from 'prosemirror-inputrules';
-
-import React, { Component } from 'react';
-import ReactDOM from 'react-dom';
-import Clock from 'react-clock';
+import {
+  inputRules,
+  InputRule,
+  textblockTypeInputRule,
+} from 'prosemirror-inputrules';
 
 import { EditorView } from '../src';
 import docJs from './doc';
@@ -32,6 +36,19 @@ const nodes = {
     toReact: class Text extends Component {
       render() {
         return this.props.children;
+      }
+    },
+  },
+
+  heading: {
+    attrs: { level: { default: 1 } },
+    content: 'inline*',
+    group: 'block',
+    defining: true,
+    toReact: class Heading extends Component {
+      render() {
+        const { children } = this.props;
+        return React.createElement(`h${this.props.level}`, { children });
       }
     },
   },
@@ -104,21 +121,27 @@ const marks = {
 export const schema = new Schema({ nodes, marks });
 const doc = schema.nodeFromJSON(docJs);
 
+function headingRule(nodeType, maxLevel) {
+  return textblockTypeInputRule(
+    new RegExp('^(#{1,' + maxLevel + '})\\s$'),
+    nodeType,
+    match => ({ level: match[1].length })
+  );
+}
+
 const rules = [
   new InputRule(/:\)$/, '😀'),
   new InputRule(/:o$/, '😲'),
   new InputRule(/8\)$/, '😎'),
   new InputRule(/<3$/, '❤️'),
-  new InputRule(/atlassian$/, 'Atlassian')
+  new InputRule(/atlassian$/, 'Atlassian'),
+  headingRule(schema.nodes.heading, 6),
 ];
 
 const state = EditorState.create({
   schema,
   doc,
-  plugins: [
-    inputRules({ rules }),
-    keymap(baseKeymap),
-  ],
+  plugins: [inputRules({ rules }), keymap(baseKeymap)],
 });
 
 ReactDOM.render(<EditorView state={state} />, document.getElementById('app'));
