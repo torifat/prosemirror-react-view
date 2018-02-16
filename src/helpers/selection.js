@@ -1,3 +1,7 @@
+import { Selection } from 'prosemirror-state';
+import { findStartPos, getPmViewDesc } from './pm-view-desc';
+
+// applySelection :: HTMLElement -> number -> number -> void
 const applySelection = (dom, anchor, head) => {
   const domSel = document.getSelection();
   const range = document.createRange();
@@ -7,25 +11,7 @@ const applySelection = (dom, anchor, head) => {
   domSel.addRange(range);
 };
 
-const findLocalDomPosition = (pos, pmViewDesc) => {
-  if (pmViewDesc.node.isLeaf) {
-    return { dom: pmViewDesc.dom, offset: 0 };
-  }
-
-  for (let offset = 0, i = 0; ; i++) {
-    if (offset == pos) {
-      while (i < pmViewDesc.children.length) i++; //&& this.children[i].beforePosition
-      return { dom: pmViewDesc.dom, offset: i };
-    }
-    if (i == pmViewDesc.children.length)
-      throw new Error('Invalid position ' + pos);
-    let child = pmViewDesc.children[i],
-      end = offset + child.node.content.size;
-    if (pos < end) return findLocalDomPosition(pos - offset - 0, child);
-    offset = end;
-  }
-};
-
+// setSelection :: number -> number -> ViewDesc -> void
 export const setSelection = (anchor, head, pmViewDesc) => {
   // If the selection falls entirely in a child, give it to that child
   const from = Math.min(anchor, head),
@@ -58,4 +44,20 @@ export const setSelection = (anchor, head, pmViewDesc) => {
   if (dom) {
     applySelection(dom.nodeType === 1 ? dom.firstChild : dom, anchor, head);
   }
+};
+
+// findPosFromDom :: _ -> number
+export const findPosFromDom = () => {
+  const domSel = window.getSelection();
+  // +1 for doc(<--| start border |)
+  return (
+    findStartPos(getPmViewDesc(domSel.anchorNode)) + domSel.anchorOffset + 1
+  );
+};
+
+// getCurrentSelection :: State -> Selection
+export const getCurrentSelection = editorState => {
+  const head = findPosFromDom();
+  const $head = editorState.doc.resolve(head);
+  return Selection.findFrom($head, 0);
 };

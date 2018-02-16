@@ -2,6 +2,7 @@ import { EditorState } from 'prosemirror-state';
 import { Schema } from 'prosemirror-model';
 import { keymap } from 'prosemirror-keymap';
 import { baseKeymap } from 'prosemirror-commands';
+import { inputRules, InputRule } from 'prosemirror-inputrules';
 
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
@@ -103,10 +104,21 @@ const marks = {
 export const schema = new Schema({ nodes, marks });
 const doc = schema.nodeFromJSON(docJs);
 
+const rules = [
+  new InputRule(/:\)$/, '😀'),
+  new InputRule(/:o$/, '😲'),
+  new InputRule(/8\)$/, '😎'),
+  new InputRule(/<3$/, '❤️'),
+  new InputRule(/atlassian$/, 'Atlassian')
+];
+
 const state = EditorState.create({
   schema,
   doc,
-  plugins: [keymap(baseKeymap)],
+  plugins: [
+    inputRules({ rules }),
+    keymap(baseKeymap),
+  ],
 });
 
 ReactDOM.render(<EditorView state={state} />, document.getElementById('app'));

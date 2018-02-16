@@ -11,11 +11,39 @@ const assignDomToPmViewDesc = pmViewDesc => ref => {
   }
 };
 
+const equalSubTree = (lTree, rTree) => {
+  if (lTree !== rTree) {
+    return false;
+  }
+
+  if (lTree.content.size !== rTree.content.size) {
+    return false;
+  }
+
+  const lLength = lTree.content.content.length;
+  if (lLength !== rTree.content.content.length) {
+    return false;
+  }
+
+  // zip + every :(
+  let isEqual = true;
+  for (let i = 0; i < lLength; ++i) {
+    isEqual =
+      isEqual &&
+      equalSubTree(lTree.content.content[i], rTree.content.content[i]);
+  }
+
+  return isEqual;
+};
+
 const smartRender = WrappedComponent => {
   class WrapperComponent extends Component {
-    shouldComponentUpdate(nextProps) {
-      return nextProps.children !== this.props.children;
-    }
+    // shouldComponentUpdate(nextProps) {
+    //   if (this.props.node) {
+    //     return !equalSubTree(this.props.node, nextProps.node);
+    //   }
+    //   return true;
+    // }
 
     render() {
       return createElement(WrappedComponent, this.props);
@@ -56,7 +84,12 @@ const nodeToReactElement = (node, depth, parentPmViewDesc) =>
         );
 
       return (
-        <Block ref={assignDomToPmViewDesc(pmViewDesc)} key={key} {...attrs}>
+        <Block
+          node={child}
+          ref={assignDomToPmViewDesc(pmViewDesc)}
+          key={key}
+          {...attrs}
+        >
           {children}
         </Block>
       );

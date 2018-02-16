@@ -3,12 +3,15 @@ import ReactDOM from 'react-dom';
 import { TextSelection, Selection } from 'prosemirror-state';
 
 import renderer from './renderer';
-import { findStartPos, getPmViewDesc } from './helpers/pm-view-desc';
-import { setSelection } from './helpers/selection';
+import {
+  setSelection,
+  getCurrentSelection,
+  findPosFromDom,
+} from './helpers/selection';
 import Keys from './keys';
 
 export class EditorView extends Component {
-  listeners = { handleKeyDown: [] };
+  listeners = { handleKeyDown: [], handleTextInput: [] };
   rootPmViewDesc = {};
 
   state = {
@@ -19,9 +22,11 @@ export class EditorView extends Component {
     super(props);
     const { state } = this.props;
     state.plugins.map(({ props }) => {
-      if (props.handleKeyDown) {
-        this.listeners.handleKeyDown.push(props.handleKeyDown);
-      }
+      Object.keys(this.listeners).forEach(key => {
+        if (props[key] && this.listeners[key]) {
+          this.listeners[key].push(props[key]);
+        }
+      });
     });
   }
 
@@ -85,8 +90,8 @@ export class EditorView extends Component {
 
     switch (keyCode) {
       case Keys.RETURN:
-        event.preventDefault();
       case Keys.BACKSPACE:
+        event.preventDefault();
       case Keys.LEFT:
       case Keys.RIGHT:
         this.listeners.handleKeyDown.forEach(listener => {
@@ -104,10 +109,28 @@ export class EditorView extends Component {
       default:
         if (
           (event.which >= Keys.A && event.which <= Keys.Z) ||
+          (event.which >= Keys.ZERO && event.which <= Keys.NINE) ||
+          // :) <
+          (event.which === 186 || event.which === 48 || event.which === 188) ||
           event.which === Keys.SPACE
         ) {
-          const tr = editorState.tr.insertText(event.key);
-          this.dispatch(tr);
+          const { from, to } = editorState.selection;
+          const handled = this.listeners.handleTextInput.some(listener =>
+            listener(
+              {
+                state: editorState,
+                dispatch: this.dispatch,
+              },
+              from,
+              to,
+              event.key
+            )
+          );
+
+          if (!handled) {
+            const tr = editorState.tr.insertText(event.key, from, to);
+            this.dispatch(tr);
+          }
         }
         event.preventDefault();
     }
@@ -125,16 +148,8 @@ export class EditorView extends Component {
 
   onSelect = event => {
     const { editorState } = this.state;
-    const domSel = window.getSelection();
-    // +1 for doc(<--| start border |)
-    const head =
-      findStartPos(getPmViewDesc(domSel.anchorNode)) + domSel.anchorOffset + 1;
-    const $head = editorState.doc.resolve(head);
-    const sel = Selection.findFrom($head, 0);
-    if (sel) {
-      const tr = editorState.tr.setSelection(sel);
-      this.dispatch(tr, true);
-    }
+    const tr = editorState.tr.setSelection(getCurrentSelection(editorState));
+    this.dispatch(tr, true);
   };
 
   endOfTextblock() {

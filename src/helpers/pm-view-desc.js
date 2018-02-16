@@ -7,11 +7,11 @@ export const getPmViewDesc = dom => {
   return (pointer && pointer.pmViewDesc) || {};
 };
 
-// findStartPos :: Object -> number
+// findStartPos :: ViewDesc -> number
 export const findStartPos = pmViewDesc =>
   pmViewDesc.parent ? findPosBeforeChild(pmViewDesc) : 0;
 
-// findPosBeforeChild :: Object -> number
+// findPosBeforeChild :: ViewDesc -> number
 export const findPosBeforeChild = pmViewDesc => {
   const { node, parent, dom } = pmViewDesc;
   const { children } = parent;
